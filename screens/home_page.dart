@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'registro_inventario_page.dart';
+import 'registro_ventas_page.dart'; // Agregamos esta importación
 import 'login.dart';
 import 'ajustes.dart';
 
@@ -144,7 +145,7 @@ class HomePage extends StatelessWidget {
           'Registra nuevas ventas',
           Icons.point_of_sale_outlined,
           Colors.blue,
-          () => _navigateToPage(context, const RegistroInventarioPage()),
+          () => _navigateToPage(context, const RegistroVentasScreen()), // Corregido
         ),
         _buildMenuCard(
           context,
@@ -168,7 +169,7 @@ class HomePage extends StatelessWidget {
           'Ver productos disponibles',
           Icons.inventory_2_outlined,
           Colors.orange,
-          () => _navigateToPage(context, const InventarioPage1()), // Este ya estaba correcto
+          () => _navigateToPage(context, const InventarioPage1()),
         ),
       ],
     );
@@ -321,7 +322,7 @@ class HomePage extends StatelessWidget {
                 'Venta Rápida',
                 Icons.flash_on,
                 const Color(0xFF4CAF50),
-                () => _showComingSoon(context, 'Venta Rápida'),
+                () => _navigateToPage(context, const RegistroVentasScreen()),
               ),
               _buildQuickAction(
                 'Buscar',

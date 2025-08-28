@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../models/venta.dart';
-import '../models/inventario.dart'; // Añadir esta importación
 import '../services/venta_service.dart';
 
 class RegistroVentasScreen extends StatefulWidget {
@@ -17,11 +16,10 @@ class _RegistroVentasScreenState extends State<RegistroVentasScreen> {
   final TextEditingController _observacionesController = TextEditingController();
   final NumberFormat _currencyFormat = NumberFormat("#,##0.00", "es_HN");
   
-  List<ProductoInventario> _productosDisponibles = [];
-  List<Map<String, dynamic>> _carritoVenta = []; // {producto: ProductoInventario, cantidad: int}
-  String _metodoPago = 'efectivo';
-  bool _cargando = false;
-  bool _procesandoVenta = false;
+List<ProductoInventario> _productosDisponibles = [];
+List<Map<String, dynamic>> _carritoVenta = [];
+String _metodoPago = 'efectivo';
+bool _procesandoVenta = false;
 
   @override
   void dispose() {

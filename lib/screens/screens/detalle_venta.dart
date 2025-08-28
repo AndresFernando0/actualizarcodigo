@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'historial_venta.dart';
-import 'venta_service.dart';
+import '../../models/venta.dart';
+import '../../services/venta_service.dart';
 
 class DetalleVentaScreen extends StatefulWidget {
   final Venta venta;

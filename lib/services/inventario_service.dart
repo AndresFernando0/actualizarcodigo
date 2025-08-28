@@ -24,20 +24,21 @@ class InventarioService {
     });
   }
 
-  Future<void> guardarInventario(List<Inventario> inventario) async {
-    final batch = FirebaseFirestore.instance.batch();
+ Future<void> guardarInventario(List<Inventario> inventario) async {
+  final batch = FirebaseFirestore.instance.batch();
 
-    for (var item in inventario) {
-      final docRef = _inventarioRef.doc();
-      final itemData = item.toMap();
-      itemData['fecha'] = Timestamp.fromDate(item.fecha);
+  for (var item in inventario) {
+    final docRef = _inventarioRef.doc();
+    final itemData = item.toMap();
+    itemData['fecha'] = Timestamp.fromDate(item.fecha);
+    itemData['disponible'] = true; 
+    itemData['stock'] = 1; 
 
-      batch.set(docRef, itemData);
-    }
-
-    await batch.commit();
+    batch.set(docRef, itemData);
   }
 
+  await batch.commit();
+}
   Future<void> eliminarItemInventario(String id) async {
     await _inventarioRef.doc(id).delete();
   }

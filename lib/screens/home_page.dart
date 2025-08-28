@@ -6,6 +6,7 @@ import 'registro_inventario_page.dart';
 import 'registro_ventas_page.dart'; // Agregamos esta importación
 import 'login.dart';
 import 'ajustes.dart';
+import 'historial_ventas.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -161,7 +162,7 @@ class HomePage extends StatelessWidget {
           'Ventas realizadas',
           Icons.history_outlined,
           Colors.green,
-          () => _showComingSoon(context, 'Historial de Ventas'),
+          () => _navigateToPage(context, const HistorialVentasScreen()),
         ),
         _buildMenuCard(
           context,

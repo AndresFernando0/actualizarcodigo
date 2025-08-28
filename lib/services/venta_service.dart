@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/venta.dart';
-import '../models/inventario.dart'; // Importar para usar ProductoInventario
 import 'dart:math';
 
 class VentasService {

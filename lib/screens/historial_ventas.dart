@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/venta.dart';
 import '../services/venta_service.dart';
-import '../screens/screens/detalle_venta.dart';
+import 'detalle_venta.dart';
 
 class HistorialVentasScreen extends StatefulWidget {
   const HistorialVentasScreen({super.key});

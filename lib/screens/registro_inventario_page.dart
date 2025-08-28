@@ -4,7 +4,6 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:intl/intl.dart';
 import '../models/inventario.dart';
 import '../services/inventario_service.dart';
-import '../widgets/inventario_card.dart';
 
 class RegistroInventarioPage extends StatefulWidget {
   const RegistroInventarioPage({super.key});
@@ -16,7 +15,7 @@ class RegistroInventarioPage extends StatefulWidget {
 class _RegistroInventarioPageState extends State<RegistroInventarioPage> {
   final InventarioService _inventarioService = InventarioService();
   final TextEditingController nombreController = TextEditingController();
-  final TextEditingController totalController = TextEditingController();
+  final TextEditingController precioController = TextEditingController();
   final TextEditingController imeiController = TextEditingController();
   final NumberFormat _currencyFormat = NumberFormat("#,##0.00", "es_HN");
   List<Inventario> productos = [];
@@ -26,7 +25,7 @@ class _RegistroInventarioPageState extends State<RegistroInventarioPage> {
   @override
   void dispose() {
     nombreController.dispose();
-    totalController.dispose();
+    precioController.dispose();
     imeiController.dispose();
     super.dispose();
   }
@@ -35,33 +34,67 @@ class _RegistroInventarioPageState extends State<RegistroInventarioPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (context) => SafeArea(
         child: SizedBox(
           height: MediaQuery.of(context).size.height * 0.7,
           child: Column(
             children: [
               AppBar(
-                title: const Text('Escanear Código'),
+                title: const Text('Escanear Código IMEI'),
                 leading: IconButton(
                   icon: const Icon(Icons.close),
                   onPressed: () => Navigator.pop(context),
                 ),
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                elevation: 0,
               ),
               Expanded(
-                child: MobileScanner(
-                  controller: MobileScannerController(
-                    facing: CameraFacing.back,
-                    torchEnabled: false,
-                  ),
-                  onDetect: (capture) {
-                    final List<Barcode> barcodes = capture.barcodes;
-                    if (barcodes.isNotEmpty) {
-                      setState(() {
-                        imeiController.text = barcodes.first.rawValue ?? '';
-                      });
-                      Navigator.pop(context);
-                    }
-                  },
+                child: Stack(
+                  children: [
+                    MobileScanner(
+                      controller: MobileScannerController(
+                        facing: CameraFacing.back,
+                        torchEnabled: false,
+                      ),
+                      onDetect: (capture) {
+                        final List<Barcode> barcodes = capture.barcodes;
+                        if (barcodes.isNotEmpty) {
+                          setState(() {
+                            imeiController.text = barcodes.first.rawValue ?? '';
+                          });
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('IMEI escaneado: ${barcodes.first.rawValue}'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                    Center(
+                      child: Container(
+                        width: 250,
+                        height: 250,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.green, width: 2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(16),
+                child: const Text(
+                  'Coloque el código IMEI dentro del marco para escanear',
+                  style: TextStyle(fontSize: 16),
+                  textAlign: TextAlign.center,
                 ),
               ),
             ],
@@ -72,10 +105,33 @@ class _RegistroInventarioPageState extends State<RegistroInventarioPage> {
   }
 
   void _agregarALista() {
-    if (nombreController.text.isEmpty || totalController.text.isEmpty) {
+    if (nombreController.text.isEmpty || precioController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Por favor completa los campos requeridos'),
+          content: Row(
+            children: [
+              Icon(Icons.warning, color: Colors.white),
+              SizedBox(width: 10),
+              Text('Por favor completa los campos requeridos'),
+            ],
+          ),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Validar IMEI si se proporcionó
+    if (imeiController.text.isNotEmpty && imeiController.text.length != 15) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.error, color: Colors.white),
+              SizedBox(width: 10),
+              Text('El IMEI debe tener exactamente 15 dígitos'),
+            ],
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -83,29 +139,54 @@ class _RegistroInventarioPageState extends State<RegistroInventarioPage> {
     }
 
     setState(() {
-      final String totalLimpio =
-          totalController.text.replaceAll('L. ', '').replaceAll(',', '').trim();
+      final String precioLimpio =
+          precioController.text.replaceAll('L. ', '').replaceAll(',', '').trim();
 
-      final int totalEntero = int.tryParse(totalLimpio) ?? 0;
+      final double precioDouble = double.tryParse(precioLimpio) ?? 0.0;
 
       final producto = Inventario(
         id: idEdicion ?? DateTime.now().millisecondsSinceEpoch.toString(),
-        nombre: nombreController.text,
-        imei: imeiController.text,
-        total: totalEntero,
+        nombre: nombreController.text.trim(),
+        imei: imeiController.text.trim(),
+        precio: precioDouble,
+        stock: 1,
+        disponible: true,
         fecha: DateTime.now(),
       );
 
-      print('📝 Agregando a lista: ${producto.toString()}');
+      print('📝 Agregando a lista: ${producto.nombre} - L. ${producto.precio}');
 
-      productos.add(producto);
+      if (idEdicion != null) {
+        // Actualizar producto existente
+        final index = productos.indexWhere((p) => p.id == idEdicion);
+        if (index >= 0) {
+          productos[index] = producto;
+        }
+      } else {
+        // Agregar nuevo producto
+        productos.add(producto);
+      }
+      
       _limpiarCampos();
     });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 10),
+            Text(idEdicion != null ? 'Producto actualizado en la lista' : 'Producto agregado a la lista'),
+          ],
+        ),
+        backgroundColor: Colors.green,
+      ),
+    );
   }
 
   void _limpiarCampos() {
     nombreController.clear();
-    totalController.clear();
+    precioController.clear();
     imeiController.clear();
     idEdicion = null;
   }
@@ -114,18 +195,30 @@ class _RegistroInventarioPageState extends State<RegistroInventarioPage> {
     final producto = productos[index];
     setState(() {
       nombreController.text = producto.nombre;
-      totalController.text =
-          'L. ${_currencyFormat.format(producto.total.toDouble())}';
+      precioController.text = 'L. ${_currencyFormat.format(producto.precio)}';
       imeiController.text = producto.imei;
       idEdicion = producto.id;
       productos.removeAt(index);
     });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.edit, color: Colors.white),
+            SizedBox(width: 10),
+            Text('Producto cargado para edición'),
+          ],
+        ),
+        backgroundColor: Colors.blue,
+      ),
+    );
   }
 
   String formatNumber(String value) {
     if (value.isEmpty) return '';
-    final number = int.tryParse(value.replaceAll(',', '')) ?? 0;
-    final parts = number.toString().split('');
+    final number = double.tryParse(value.replaceAll(',', '')) ?? 0;
+    final parts = number.toInt().toString().split('');
     String result = '';
     for (int i = parts.length - 1, count = 0; i >= 0; i--, count++) {
       if (count > 0 && count % 3 == 0) {
@@ -139,6 +232,22 @@ class _RegistroInventarioPageState extends State<RegistroInventarioPage> {
   Future<void> _guardarProductos() async {
     if (_guardando) return;
 
+    if (productos.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.warning, color: Colors.white),
+              SizedBox(width: 10),
+              Text('Agregue productos a la lista antes de guardar'),
+            ],
+          ),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     try {
       setState(() {
         _guardando = true;
@@ -149,12 +258,12 @@ class _RegistroInventarioPageState extends State<RegistroInventarioPage> {
 
       print('🔄 Iniciando guardado de $cantidadProductos productos...');
 
+      await _inventarioService.guardarInventario(productosParaGuardar);
+
       setState(() {
         productos = [];
         _limpiarCampos();
       });
-
-      await _inventarioService.guardarInventario(productosParaGuardar);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -173,27 +282,26 @@ class _RegistroInventarioPageState extends State<RegistroInventarioPage> {
             behavior: SnackBarBehavior.floating,
           ),
         );
+
         await showDialog(
           context: context,
           barrierDismissible: false,
           builder: (BuildContext context) => AlertDialog(
-            title: Row(
+            title: const Row(
               children: [
-                const Icon(Icons.check_circle, color: Colors.green, size: 24),
-                const SizedBox(width: 10),
-                const Text('¡Guardado Exitoso!'),
+                Icon(Icons.check_circle, color: Colors.green, size: 24),
+                SizedBox(width: 10),
+                Text('¡Guardado Exitoso!'),
               ],
             ),
             content: Text(cantidadProductos == 1
-                ? 'Se ha guardado 1 producto correctamente.'
-                : 'Se han guardado $cantidadProductos productos correctamente y la lista ha sido limpiada.'),
+                ? 'Se ha guardado 1 producto correctamente en el inventario.'
+                : 'Se han guardado $cantidadProductos productos correctamente en el inventario.'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.green,
-                ),
-                child: const Text('OK'),
+                style: TextButton.styleFrom(foregroundColor: Colors.green),
+                child: const Text('Continuar'),
               ),
             ],
           ),
@@ -203,19 +311,15 @@ class _RegistroInventarioPageState extends State<RegistroInventarioPage> {
       print('❌ Error al guardar productos: $e');
 
       if (mounted) {
-        // Restaurar los productos al estado local si hay error
-        setState(() {
-          productos = List<Inventario>.from(productos);
-        });
-
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
               children: [
                 const Icon(Icons.error, color: Colors.white),
                 const SizedBox(width: 10),
-                Text(
-                    'Error al guardar los productos: ${e.toString().substring(0, 100)}...'),
+                Expanded(
+                  child: Text('Error al guardar los productos: ${e.toString()}'),
+                ),
               ],
             ),
             backgroundColor: Colors.red,
@@ -236,18 +340,18 @@ class _RegistroInventarioPageState extends State<RegistroInventarioPage> {
   Widget _buildActionButtons() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Si el ancho es menor a 400 pixels, usar columna
         if (constraints.maxWidth < 400) {
           return Column(
             children: [
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton.icon(
+                child: OutlinedButton.icon(
                   onPressed: _escanearCodigo,
                   icon: const Icon(Icons.qr_code_scanner),
-                  label: const Text('Escanear Código'),
-                  style: ElevatedButton.styleFrom(
+                  label: const Text('Escanear IMEI'),
+                  style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
+                    side: const BorderSide(color: Colors.green),
                   ),
                 ),
               ),
@@ -257,9 +361,10 @@ class _RegistroInventarioPageState extends State<RegistroInventarioPage> {
                 child: ElevatedButton.icon(
                   onPressed: _agregarALista,
                   icon: const Icon(Icons.add),
-                  label: Text(
-                      idEdicion != null ? 'Actualizar' : 'Agregar a Lista'),
+                  label: Text(idEdicion != null ? 'Actualizar en Lista' : 'Agregar a Lista'),
                   style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
@@ -267,16 +372,16 @@ class _RegistroInventarioPageState extends State<RegistroInventarioPage> {
             ],
           );
         } else {
-          // Si hay suficiente espacio, usar fila
           return Row(
             children: [
               Expanded(
-                child: ElevatedButton.icon(
+                child: OutlinedButton.icon(
                   onPressed: _escanearCodigo,
                   icon: const Icon(Icons.qr_code_scanner),
-                  label: const Text('Escanear Código'),
-                  style: ElevatedButton.styleFrom(
+                  label: const Text('Escanear IMEI'),
+                  style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
+                    side: const BorderSide(color: Colors.green),
                   ),
                 ),
               ),
@@ -285,9 +390,10 @@ class _RegistroInventarioPageState extends State<RegistroInventarioPage> {
                 child: ElevatedButton.icon(
                   onPressed: _agregarALista,
                   icon: const Icon(Icons.add),
-                  label: Text(
-                      idEdicion != null ? 'Actualizar' : 'Agregar a Lista'),
+                  label: Text(idEdicion != null ? 'Actualizar' : 'Agregar a Lista'),
                   style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
@@ -299,33 +405,110 @@ class _RegistroInventarioPageState extends State<RegistroInventarioPage> {
     );
   }
 
+  Widget _buildProductoCard(Inventario producto, int index) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      elevation: 2,
+      child: ListTile(
+        leading: Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            color: Colors.green.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Icon(Icons.phone_android, color: Colors.green),
+        ),
+        title: Text(
+          producto.nombre,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (producto.imei.isNotEmpty) Text('IMEI: ${producto.imei}'),
+            Text('Precio: L. ${_currencyFormat.format(producto.precio)}'),
+          ],
+        ),
+        trailing: SizedBox(
+          width: 100,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              IconButton(
+                onPressed: () => _editarProducto(index),
+                icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
+                tooltip: 'Editar',
+              ),
+              IconButton(
+                onPressed: () => setState(() => productos.removeAt(index)),
+                icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                tooltip: 'Eliminar',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Registro de Inventario')),
+      appBar: AppBar(
+        title: const Text('Registro de Inventario'),
+        backgroundColor: Colors.green,
+        foregroundColor: Colors.white,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Fecha y Hora: ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            // Header con fecha
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.green.withOpacity(0.1), Colors.green.withOpacity(0.05)],
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Nuevo Registro',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    'Fecha: ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}',
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
+
+            // Formulario
             TextField(
               controller: nombreController,
               decoration: const InputDecoration(
-                labelText: 'Nombre del Artículo',
+                labelText: 'Nombre del Producto *',
+                hintText: 'Ej: Samsung Galaxy S20',
                 border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.phone_android),
               ),
+              textCapitalization: TextCapitalization.words,
             ),
             const SizedBox(height: 16),
+
             TextField(
-              controller: totalController,
-              keyboardType: TextInputType.number,
+              controller: precioController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                 TextInputFormatter.withFunction((oldValue, newValue) {
                   final cleanText = newValue.text.replaceAll(',', '');
                   if (cleanText.isEmpty) return newValue;
@@ -333,35 +516,39 @@ class _RegistroInventarioPageState extends State<RegistroInventarioPage> {
                   final formatted = formatNumber(cleanText);
                   return TextEditingValue(
                     text: formatted,
-                    selection:
-                        TextSelection.collapsed(offset: formatted.length),
+                    selection: TextSelection.collapsed(offset: formatted.length),
                   );
                 }),
               ],
               decoration: const InputDecoration(
-                labelText: 'Total',
-                hintText: 'Ingrese el precio',
+                labelText: 'Precio *',
+                hintText: '0.00',
                 prefixText: 'L. ',
                 border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.attach_money),
               ),
             ),
             const SizedBox(height: 16),
+
             TextField(
               controller: imeiController,
               maxLength: 15,
               keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-              ],
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               decoration: const InputDecoration(
-                labelText: 'IMEI (Escaneado o Ingresado)',
+                labelText: 'IMEI (Opcional)',
+                hintText: 'Escanear o ingresar manualmente',
                 counterText: '15 dígitos máximo',
                 border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.fingerprint),
               ),
             ),
             const SizedBox(height: 20),
+
             _buildActionButtons(),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
+
+            // Lista de productos
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -369,74 +556,81 @@ class _RegistroInventarioPageState extends State<RegistroInventarioPage> {
                   'Lista de Productos',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                Text(
-                  '${productos.length} ${productos.length == 1 ? 'artículo' : 'artículos'}',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(
+                    '${productos.length} ${productos.length == 1 ? 'producto' : 'productos'}',
+                    style: const TextStyle(fontSize: 12, color: Colors.blue, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+
             Container(
-              height: MediaQuery.of(context).size.height *
-                  0.3, // Altura fija responsive
+              height: MediaQuery.of(context).size.height * 0.3,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                borderRadius: BorderRadius.circular(8),
+              ),
               child: productos.isEmpty
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.list_alt,
-                              size: 48, color: Colors.grey[400]),
+                          Icon(Icons.inventory_2_outlined, size: 48, color: Colors.grey[400]),
                           const SizedBox(height: 10),
                           Text(
                             'No hay productos en la lista',
                             style: TextStyle(color: Colors.grey[600]),
                           ),
+                          const SizedBox(height: 5),
+                          Text(
+                            'Agregue productos usando el formulario',
+                            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                          ),
                         ],
                       ),
                     )
                   : ListView.builder(
+                      padding: const EdgeInsets.all(8),
                       itemCount: productos.length,
                       itemBuilder: (context, index) {
-                        return InventarioCard(
-                          inventario: productos[index],
-                          onEdit: () => _editarProducto(index),
-                          onDelete: () =>
-                              setState(() => productos.removeAt(index)),
-                        );
+                        return _buildProductoCard(productos[index], index);
                       },
                     ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
+
+            // Botón guardar
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
-                onPressed:
-                    productos.isNotEmpty && !_guardando ? _guardarProductos : null,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  backgroundColor: Colors.blue,
-                ),
-                child: _guardando
-                    ? const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2.0,
-                            ),
-                          ),
-                          SizedBox(width: 10),
-                          Text('Guardando...', style: TextStyle(fontSize: 16)),
-                        ],
+              child: ElevatedButton.icon(
+                onPressed: productos.isNotEmpty && !_guardando ? _guardarProductos : null,
+                icon: _guardando
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2.0,
+                        ),
                       )
-                    : const Text(
-                        'Guardar Productos',
-                        style: TextStyle(fontSize: 16),
-                      ),
+                    : const Icon(Icons.save),
+                label: Text(_guardando ? 'Guardando...' : 'Guardar en Inventario'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: productos.isNotEmpty ? Colors.blue : Colors.grey,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
               ),
             ),
+            const SizedBox(height: 16),
           ],
         ),
       ),

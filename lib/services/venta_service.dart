@@ -9,14 +9,14 @@ class VentasService {
   final String _detalleVentasCollection = 'detalle_ventas';
   final String _inventarioCollection = 'inventario';
 
-  // Generar número de venta único
+  // GENERAR NUMERO DE VENTA UNICO
   String _generarNumeroVenta() {
     final now = DateTime.now();
     final random = Random();
     return 'V${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-${random.nextInt(9999).toString().padLeft(4, '0')}';
   }
 
-  // Obtener vendedor logueado
+  // OBTENER VENDEDOR QUE ESTA LOGUEADO
   Future<Vendedor> _getVendedorLogueado() async {
     final prefs = await SharedPreferences.getInstance();
     return Vendedor(
@@ -26,7 +26,7 @@ class VentasService {
     );
   }
 
-  // Obtener productos disponibles para venta
+  // OBTENER PRODUCTOS DISPONIBLES PARA LA VENTA
   Stream<List<ProductoInventario>> getProductosDisponibles() {
     return _firestore
         .collection(_inventarioCollection)
@@ -40,7 +40,7 @@ class VentasService {
     });
   }
 
-  // Procesar venta completa
+  // PROCESAR VENTA COMPLETA
   Future<String> procesarVenta({
     required List<Map<String, dynamic>> productosSeleccionados,
     required String metodoPago,
@@ -49,12 +49,12 @@ class VentasService {
     final batch = _firestore.batch();
     
     try {
-      // 1. Generar datos de la venta
+      // 1- GENERAR DATOS DE LA VENTA
       final numeroVenta = _generarNumeroVenta();
       final fechaVenta = DateTime.now();
       final vendedor = await _getVendedorLogueado();
       
-      // 2. Calcular totales
+      // 2- CALCULAR TOTALES
       double subtotal = 0;
       int cantidadProductos = 0;
       
@@ -68,7 +68,7 @@ class VentasService {
       final isv = subtotal * 0.15;
       final total = subtotal + isv;
       
-      // 3. Crear documento de venta
+      // 3- CREAR DOCUMENTO DE VENTA
       final ventaRef = _firestore.collection(_ventasCollection).doc();
       final venta = Venta(
         id: ventaRef.id,
@@ -87,12 +87,12 @@ class VentasService {
       
       batch.set(ventaRef, venta.toMap());
       
-      // 4. Crear detalles de venta y actualizar inventario
+      // 4- CREAR DETALLES DE VENTA Y ACTUALIZAR INVENTARIO
       for (var item in productosSeleccionados) {
         final producto = item['producto'] as ProductoInventario;
         final cantidad = item['cantidad'] as int;
         
-        // Crear detalle de venta
+        // CREAR DETALLES DE VENTA
         final detalleRef = _firestore.collection(_detalleVentasCollection).doc();
         final detalle = DetalleVenta(
           id: detalleRef.id,
@@ -112,7 +112,7 @@ class VentasService {
         
         batch.set(detalleRef, detalle.toMap());
         
-        // Marcar producto como no disponible (vendido)
+        // MARCAR PRODUCTO COMO NO DISPONIBLE (vendido)
         final inventarioRef = _firestore.collection(_inventarioCollection).doc(producto.id);
         batch.update(inventarioRef, {
           'disponible': false,
@@ -123,7 +123,7 @@ class VentasService {
         });
       }
       
-      // 5. Ejecutar todas las operaciones
+      // 5- EJECUTAR TODOS
       await batch.commit();
       
       print('✅ Venta procesada exitosamente: $numeroVenta');
@@ -135,7 +135,7 @@ class VentasService {
     }
   }
 
-  // Obtener ventas del día actual
+  // OBTENER VENTAS DEL DIA
   Stream<List<Venta>> getVentasHoy() {
     final today = DateTime.now();
     final startOfDay = DateTime(today.year, today.month, today.day);
@@ -154,7 +154,7 @@ class VentasService {
     });
   }
 
-  // Obtener todas las ventas (con paginación opcional)
+  // OBTENES TODAS LAS VENTAS (con paginacion opcional)
   Stream<List<Venta>> getVentas({int? limit}) {
     Query query = _firestore
         .collection(_ventasCollection)
@@ -171,7 +171,7 @@ class VentasService {
     });
   }
 
-  // Obtener detalles de una venta específica
+  // OBTENER DETALLES DE UNA VENTA ESPECIFICA
   Future<List<DetalleVenta>> getDetallesVenta(String ventaId) async {
     try {
       final snapshot = await _firestore
@@ -188,21 +188,21 @@ class VentasService {
     }
   }
 
-  // Obtener estadísticas de ventas
+  // OBTENER ESTADISTICAS DE VENTA
   Future<Map<String, dynamic>> getEstadisticasVentas() async {
     try {
       final today = DateTime.now();
       final startOfDay = DateTime(today.year, today.month, today.day);
       final endOfDay = DateTime(today.year, today.month, today.day, 23, 59, 59);
 
-      // Ventas de hoy
+      // VENTAS DE HOY
       final ventasHoySnapshot = await _firestore
           .collection(_ventasCollection)
           .where('fechaVenta', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
           .where('fechaVenta', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
           .get();
 
-      // Total ventas del mes
+      // TOTAL DE VENTAS EN EL MES
       final startOfMonth = DateTime(today.year, today.month, 1);
       final ventasMesSnapshot = await _firestore
           .collection(_ventasCollection)
@@ -214,7 +214,7 @@ class VentasService {
       int cantidadVentasHoy = ventasHoySnapshot.docs.length;
       int cantidadVentasMes = ventasMesSnapshot.docs.length;
 
-      // Calcular totales
+      // CALCULAR TOTALES
       for (var doc in ventasHoySnapshot.docs) {
         totalHoy += (doc.data()['total'] ?? 0).toDouble();
       }
@@ -240,12 +240,12 @@ class VentasService {
     }
   }
 
-  // Cancelar una venta (cambiar estado)
+  // CANCELAR UNA VENTA (cambiar estado)
   Future<void> cancelarVenta(String ventaId, String motivo) async {
     final batch = _firestore.batch();
     
     try {
-      // 1. Actualizar estado de la venta
+      // 1- ACTUALIZAR ESTADO DE VENTA
       final ventaRef = _firestore.collection(_ventasCollection).doc(ventaId);
       batch.update(ventaRef, {
         'estado': 'cancelada',
@@ -253,10 +253,10 @@ class VentasService {
         'fechaCancelacion': FieldValue.serverTimestamp(),
       });
 
-      // 2. Obtener detalles de la venta para restaurar inventario
+      // 2- OBTENER DETALLES DE LA VENTA PARA RESTAURAR INVENTARIO
       final detalles = await getDetallesVenta(ventaId);
       
-      // 3. Restaurar disponibilidad de productos
+      // 3- RESTAURAR DISPONIBILIDAD DE PRODUCTOS
       for (var detalle in detalles) {
         final inventarioRef = _firestore
             .collection(_inventarioCollection)
@@ -271,7 +271,7 @@ class VentasService {
         });
       }
       
-      // 4. Ejecutar cambios
+      // 4. EJECUTAR TODOS LOS CAMBIOS
       await batch.commit();
       
       print('✅ Venta cancelada exitosamente: $ventaId');

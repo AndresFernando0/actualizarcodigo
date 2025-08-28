@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'registro_inventario_page.dart';
-import 'registro_ventas_page.dart'; // Agregamos esta importación
+import 'registro_ventas_page.dart'; 
 import 'login.dart';
 import 'ajustes.dart';
 import 'historial_ventas.dart';
@@ -308,7 +308,7 @@ class HomePage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Accesos Rápidos',
+            'Accesos Rapidos',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -320,7 +320,7 @@ class HomePage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildQuickAction(
-                'Venta Rápida',
+                'Venta Rapida',
                 Icons.flash_on,
                 const Color(0xFF4CAF50),
                 () => _navigateToPage(context, const RegistroVentasScreen()),
@@ -329,13 +329,13 @@ class HomePage extends StatelessWidget {
                 'Buscar',
                 Icons.search,
                 const Color(0xFF2196F3),
-                () => _showComingSoon(context, 'Función de búsqueda'),
+                () => _showComingSoon(context, 'Funcion de busqueda'),
               ),
               _buildQuickAction(
                 'Reportes',
                 Icons.analytics_outlined,
                 const Color(0xFFFF9800),
-                () => _showComingSoon(context, 'Reportes y análisis'),
+                () => _showComingSoon(context, 'Reportes y analisis'),
               ),
               _buildQuickAction(
                 'Ajustes',
@@ -453,7 +453,7 @@ class HomePage extends StatelessWidget {
           children: [
             const Icon(Icons.info_outline, color: Colors.white),
             const SizedBox(width: 8),
-            Text('$feature próximamente disponible'),
+            Text('$feature proximamente disponible'),
           ],
         ),
         backgroundColor: Colors.blue,

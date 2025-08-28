@@ -73,10 +73,10 @@ class _PantallaLoginState extends State<PantallaLogin> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              // Logo
+              // LOGO
               Image.asset(
                 'assets/originales_cellstore_logo.jpg',
-                height: 100, // Ajusta el tamaño según tu logo
+                height: 100, 
               ),
               const SizedBox(height: 32),
               const Text(

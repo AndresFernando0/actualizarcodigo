@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/venta.dart';
 import '../services/venta_service.dart';
-import '../screens/screens/detalle_venta.dart';
+import 'detalle_venta.dart';
 
 class HistorialVentasScreen extends StatefulWidget {
   const HistorialVentasScreen({super.key});
@@ -54,12 +54,12 @@ class _HistorialVentasScreenState extends State<HistorialVentasScreen> {
       child: TextField(
         controller: _searchController,
         decoration: const InputDecoration(
-          labelText: 'Buscar por número de venta',
+          labelText: 'Buscar por numero de venta',
           prefixIcon: Icon(Icons.search),
           border: OutlineInputBorder(),
         ),
         onChanged: (value) {
-          setState(() {}); // Trigger rebuild para filtrar
+          setState(() {}); 
         },
       ),
     );
@@ -135,7 +135,7 @@ class _HistorialVentasScreenState extends State<HistorialVentasScreen> {
 
         var ventas = snapshot.data ?? [];
 
-        // Aplicar filtros
+        // APLICAR FILTROS 
         ventas = _aplicarFiltros(ventas);
 
         if (ventas.isEmpty) {
@@ -219,7 +219,7 @@ class _HistorialVentasScreenState extends State<HistorialVentasScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => DetalleVentaScreen(venta: venta),
+                      builder: (context) => FacturaScreen(ventaId: venta.id),
                     ),
                   );
                 },
@@ -234,21 +234,21 @@ class _HistorialVentasScreenState extends State<HistorialVentasScreen> {
   List<Venta> _aplicarFiltros(List<Venta> ventas) {
     List<Venta> ventasFiltradas = List.from(ventas);
 
-    // Filtro por búsqueda
+    // FILTRO POR BUSQUEDA
     if (_searchController.text.isNotEmpty) {
       ventasFiltradas = ventasFiltradas.where((venta) =>
           venta.numeroVenta.toLowerCase().contains(_searchController.text.toLowerCase())
       ).toList();
     }
 
-    // Filtro por estado
+    // FILTRO POR ESTADO
     if (_filtroEstado != 'todos') {
       ventasFiltradas = ventasFiltradas.where((venta) =>
           venta.estado == _filtroEstado
       ).toList();
     }
 
-    // Filtro por fecha
+    // FILTRO POR FECHA
     if (_filtroFecha != 'todos') {
       final now = DateTime.now();
       switch (_filtroFecha) {
@@ -306,13 +306,13 @@ class _HistorialVentasScreenState extends State<HistorialVentasScreen> {
               },
             ),
             const SizedBox(height: 16),
-            const Text('Período:'),
+            const Text('Periodo:'),
             DropdownButtonFormField<String>(
               value: _filtroFecha,
               items: const [
                 DropdownMenuItem(value: 'todos', child: Text('Todos')),
                 DropdownMenuItem(value: 'hoy', child: Text('Hoy')),
-                DropdownMenuItem(value: 'semana', child: Text('Última semana')),
+                DropdownMenuItem(value: 'semana', child: Text('Ultima semana')),
                 DropdownMenuItem(value: 'mes', child: Text('Este mes')),
               ],
               onChanged: (value) {

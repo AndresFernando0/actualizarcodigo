@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user.dart';
 
-// Pantalla de Administración de Usuarios con Firebase Firestore
+// ADMINISTRACION USUARIOS FIREBASE
 class UserManagementScreen extends StatefulWidget {
   const UserManagementScreen({Key? key}) : super(key: key);
 
@@ -38,7 +38,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       ),
       body: Column(
         children: [
-          // Header con estadísticas
+          // ESTADISTICAS HEADER
           StreamBuilder<QuerySnapshot>(
             stream: _firestore.collection(_collectionName).snapshots(),
             builder: (context, snapshot) {
@@ -94,7 +94,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             },
           ),
 
-          // Lista de usuarios
+          // LISTA USUARIOS
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: _firestore.collection(_collectionName).snapshots(),
@@ -157,16 +157,16 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     );
   }
 
-  // Convierte los documentos de Firestore a objetos User
+  // DOCUMENTOS DE FIREBASE A DOCS USER
   List<User> _convertDocumentsToUsers(List<QueryDocumentSnapshot> docs) {
     return docs.map((doc) {
       final data = doc.data() as Map<String, dynamic>;
       return User(
         id: doc.id,
         name: data['Nombre'] ?? '',
-        email: data['Usuario'] ?? '', // Usando 'Usuario' como email
+        email: data['Usuario'] ?? '', 
         role: data['Rol'] ?? 'Viewer',
-        isActive: data['isActive'] ?? true, // Campo adicional para estado
+        isActive: data['isActive'] ?? true, 
       );
     }).toList();
   }
@@ -465,7 +465,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Nueva Contraseña (opcional)',
                   border: OutlineInputBorder(),
-                  helperText: 'Dejar vacío para mantener la actual',
+                  helperText: 'Dejar vacio para mantener la actual',
                 ),
               ),
               const SizedBox(height: 16),
@@ -510,7 +510,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Eliminar Usuario'),
-        content: Text('¿Estás seguro de que quieres eliminar a ${user.name}?'),
+        content: Text('¿Estas seguro de que quieres eliminar a ${user.name}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -532,13 +532,13 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   void _showSearchDialog() {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Función de búsqueda próximamente'),
+        content: Text('Funcion de busqueda proximamente'),
         duration: Duration(seconds: 2),
       ),
     );
   }
 
-  // Agregar usuario a Firestore
+  // AGREGAR USUARIOS A FIREBASE
   Future<void> _addUser(
       String name, String email, String password, String role) async {
     try {
@@ -571,7 +571,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     }
   }
 
-  // Editar usuario en Firestore
+  // EDITAR USUARIOS FIREBASE
   Future<void> _editUser(String id, String name, String email, String password,
       String role) async {
     try {
@@ -582,7 +582,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         'fechaActualizacion': FieldValue.serverTimestamp(),
       };
 
-      // Solo actualizar la contraseña si se proporciona una nueva
+      // ACTUALIZAR CONTRASEÑA SI SE ESCRIBE UNA NUEVA
       if (password.isNotEmpty) {
         updateData['Contraseña'] = password;
       }
@@ -609,7 +609,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     }
   }
 
-  // Eliminar usuario de Firestore
+  // BORRAR USUARIOS DE FIREBASE
   Future<void> _deleteUser(String id) async {
     try {
       await _firestore.collection(_collectionName).doc(id).delete();
@@ -634,7 +634,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     }
   }
 
-  // Cambiar estado activo/inactivo del usuario
+  // CAMBIAR EL ESTADO DEL USUARIO ACTIVO o INACTIVO
   Future<void> _toggleUserStatus(User user) async {
     try {
       await _firestore.collection(_collectionName).doc(user.id).update({

@@ -16,7 +16,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Text(
-          'Configuración del Sistema',
+          'Configuracion del Sistema',
           style: TextStyle(
             fontWeight: FontWeight.w600,
             color: Colors.white,
@@ -31,7 +31,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Sección de Administración
+            // ADMINISTRACION
             _buildSectionHeader('Administración', Icons.admin_panel_settings),
             _buildSettingsCard([
               _buildAdminTile(
